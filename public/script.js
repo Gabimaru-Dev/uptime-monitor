@@ -2,59 +2,39 @@ const form = document.getElementById('monitor-form');
 const urlInput = document.getElementById('url');
 const siteList = document.getElementById('siteList');
 
-let sites = JSON.parse(localStorage.getItem('gabimaruSites')) || [];
+async function fetchStatuses() {
+  const res = await fetch('/status');
+  const data = await res.json();
 
-function saveSites() {
-  localStorage.setItem('gabimaruSites', JSON.stringify(sites));
-}
-
-function getRandomStatus() {
-  return Math.random() > 0.2 ? 'up' : 'down'; // 80% chance it's UP
-}
-
-function createSiteElement(site) {
-  const li = document.createElement('li');
-  const status = getRandomStatus();
-
-  li.innerHTML = `
-    <span>${site}</span>
-    <span class="status ${status}">${status.toUpperCase()}</span>
-    <button class="remove-btn">✖</button>
-  `;
-
-  li.querySelector('.remove-btn').onclick = () => {
-    sites = sites.filter(s => s !== site);
-    saveSites();
-    renderSites();
-  };
-
-  siteList.appendChild(li);
-}
-
-function renderSites() {
   siteList.innerHTML = '';
-  sites.forEach(createSiteElement);
+  data.forEach(({ url, status }) => {
+    const li = document.createElement('li');
+    li.innerHTML = `
+      <span>${url}</span>
+      <span class="status ${status}">${status.toUpperCase()}</span>
+    `;
+    siteList.appendChild(li);
+  });
 }
 
-form.addEventListener('submit', e => {
+form.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const site = urlInput.value.trim();
-  if (!site) return;
+  const url = urlInput.value.trim();
+  if (!url.startsWith('http')) return alert('URL must start with http(s)://');
 
-  if (!/^https?:\/\//.test(site)) {
-    alert("URL must start with http:// or https://");
-    return;
+  const res = await fetch('/add', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url })
+  });
+
+  if (res.ok) {
+    urlInput.value = '';
+    fetchStatuses();
+  } else {
+    alert(await res.text());
   }
-
-  if (sites.includes(site)) {
-    alert("Site already added.");
-    return;
-  }
-
-  sites.push(site);
-  saveSites();
-  renderSites();
-  urlInput.value = '';
 });
 
-renderSites();
+setInterval(fetchStatuses, 10000); // Refresh every 10 seconds
+fetchStatuses();
