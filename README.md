@@ -1,4 +1,4 @@
-Uptimer Using Node cron and express. 
+#Uptimer Using Node cron and express. 
 Example code for the uptiming procedure 
 ```
 const express = require('express');
@@ -33,3 +33,4 @@ app.get('/status', async (req, res) => {
 
 app.listen(PORT, () => console.log(`Uptimer running on http://localhost:${PORT}`));
 ```
+Note: this is only the backend setup, and you would still need to work on the front end to actually work the site
